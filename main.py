@@ -3,9 +3,10 @@ import pygame
 import sys
 
 ROWS, COLS = 64, 64
+COLS_OFFSET = COLS // 2
 TILE_SIZE = 8
 FPS = 24
-MAX_HEAT_VALUE = 36
+MAX_HEAT_VALUE = 24
 
 pygame.init()
 pygame.display.set_caption("Fire Simulation by lmToT27")
@@ -35,11 +36,11 @@ def GetFireGradient(steps):
     return palette[::-1]
 
 color = GetFireGradient(MAX_HEAT_VALUE)
-heat_value = [[0] * COLS for _ in range(ROWS)]
+heat_value = [[0] * (COLS + COLS_OFFSET) for _ in range(ROWS)]
 
 def DisplayFire():
     for i in range(ROWS):
-        for j in range(COLS):
+        for j in range(COLS + COLS_OFFSET):
             rect = pygame.Rect(j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE)
             pygame.draw.rect(screen, color[heat_value[i][j]], rect)
 
@@ -52,16 +53,16 @@ def SpreadFire(x, y):
         rd = random.randint(0, 3)
         nxt_x = x - 1
         nxt_y = y - rd + 1
-        if 0 <= nxt_y < COLS:
+        if 0 <= nxt_y < COLS + COLS_OFFSET:
             heat_value[nxt_x][nxt_y] = max(0, cur_hval - (rd & 1))
 
 def SimulatingFire():
     for x in range(1, ROWS):
-        for y in range(COLS):
+        for y in range(COLS + COLS_OFFSET):
             SpreadFire(x, y)
 
 running = True
-heat_value[ROWS - 1] = [MAX_HEAT_VALUE for _ in range(COLS)]
+heat_value[ROWS - 1] = [MAX_HEAT_VALUE for _ in range(COLS + COLS_OFFSET)]
 
 while running:
     for event in pygame.event.get():
