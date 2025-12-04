@@ -2,62 +2,78 @@ import random
 import pygame
 import sys
 
-SCREEN_SIZE = (600, 400) # WIDTH / HEIGHT
-TILE_SIZE = 20
-ROWS, COLS = (SCREEN_SIZE[1] + TILE_SIZE - 1) // TILE_SIZE, (SCREEN_SIZE[0] + TILE_SIZE - 1) // TILE_SIZE
-print(ROWS, COLS)
+ROWS, COLS = 64, 64
+TILE_SIZE = 8
 FPS = 24
-
 MAX_HEAT_VALUE = 36
-MAX_HEAT_INDEX = 12
 
 pygame.init()
 pygame.display.set_caption("Fire Simulation by lmToT27")
-screen = pygame.display.set_mode(SCREEN_SIZE)
+screen = pygame.display.set_mode((COLS * TILE_SIZE, ROWS * TILE_SIZE))
 clock = pygame.time.Clock()
 
 def GetFireGradient(steps):
     palette = []
     
-    white = pygame.Color(255, 255, 255)
-    yellow = pygame.Color(255, 255, 0)
-    red = pygame.Color(255, 0, 0)
-    black = pygame.Color(0, 0, 0)
+    color0 = pygame.Color(183, 232, 235)
+    color1 = pygame.Color(17, 101, 193)
+    color2 = pygame.Color(4, 63, 152)
+    color3 = pygame.Color(0, 0, 0)
     
     part = steps // 3
     
     for i in range(part):
-        palette.append(white.lerp(yellow, i / part))
+        palette.append(color0.lerp(color1, i / part))
         
     for i in range(part):
-        palette.append(yellow.lerp(red, i / part))
+        palette.append(color1.lerp(color2, i / part))
         
     part = steps - 2 * part
-    for i in range(part):
-        palette.append(red.lerp(black, i / part))
+    for i in range(part + 1):
+        palette.append(color2.lerp(color3, i / part))
         
-    return palette
+    return palette[::-1]
 
-color = GetFireGradient(MAX_HEAT_INDEX)
+color = GetFireGradient(MAX_HEAT_VALUE)
+heat_value = [[0] * COLS for _ in range(ROWS)]
 
 def DisplayFire():
     for i in range(ROWS):
         for j in range(COLS):
-            x = (COLS - j - 1) * TILE_SIZE
-            y = (ROWS - i - 1) * TILE_SIZE
-            rect = pygame.Rect(x, y, TILE_SIZE, TILE_SIZE)
-            pygame.draw.rect(screen, color[heat_value[i][j] // MAX_HEAT_VALUE], rect)
-            
-heat_value = [[15] * COLS] * ROWS
+            rect = pygame.Rect(j * TILE_SIZE, i * TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            pygame.draw.rect(screen, color[heat_value[i][j]], rect)
+
+def SpreadFire(x, y):
+    cur_hval = heat_value[x][y]
+
+    if cur_hval == 0: 
+        heat_value[x - 1][y] = 0
+    else:
+        rd = random.randint(0, 3)
+        nxt_x = x - 1
+        nxt_y = y - rd + 1
+        if 0 <= nxt_y < COLS:
+            heat_value[nxt_x][nxt_y] = max(0, cur_hval - (rd & 1))
+
+def SimulatingFire():
+    for x in range(1, ROWS):
+        for y in range(COLS):
+            SpreadFire(x, y)
 
 running = True
+heat_value[ROWS - 1] = [MAX_HEAT_VALUE for _ in range(COLS)]
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    screen.fill("#000000")
+
+    SimulatingFire()
+    screen.fill((0, 0, 0))
     DisplayFire()
-    pygame.display.update()
+
+    pygame.display.flip()
+    clock.tick(FPS)
 
 pygame.quit()
 sys.exit()
